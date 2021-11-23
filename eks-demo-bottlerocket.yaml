@@ -1,0 +1,56 @@
+kind: ClusterConfig
+apiVersion: eksctl.io/v1alpha5
+
+metadata:
+  name: chris-eks-demo-cluster
+  region: eu-central-1
+  version: "1.21"
+  tags: {owner: chris}
+
+iam:
+  withOIDC: true
+
+nodeGroups:
+  - name: chris-1a
+    instanceType: t2.medium
+    iam: 
+      withAddonPolicies:
+        ebs: true
+    availabilityZones:
+      - eu-central-1a
+    desiredCapacity: 1
+    ssh:
+      allow: true
+      publicKeyName: chris-milsted-key
+    volumeSize: 100
+    volumeType: gp2
+
+
+  - name: chris-1b
+    instanceType: t2.medium
+    iam: 
+      withAddonPolicies:
+        ebs: true
+    availabilityZones:
+      - eu-central-1b
+    desiredCapacity: 1
+    ssh:
+      allow: true
+      publicKeyName: chris-milsted-key
+    volumeSize: 100
+    volumeType: gp2
+
+      
+  - name: chris-1c
+    instanceType: t2.medium
+    iam: 
+      withAddonPolicies:
+        ebs: true
+    availabilityZones:
+      - eu-central-1c
+    desiredCapacity: 1
+    ssh:
+      allow: true
+      publicKeyName: chris-milsted-key
+    volumeSize: 100
+    volumeType: gp2
