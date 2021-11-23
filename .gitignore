@@ -27,3 +27,9 @@ override.tf.json
 
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
 # example: *tfplan*
+eks-demo-bottlerocket.yaml.backup
+eks-demo-bottlerocket.yaml.managed
+get-launch-template-data.json
+main.tf
+postgres-operator
+second-launch.json
