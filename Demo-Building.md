@@ -62,7 +62,7 @@ Rather than come up with a massive set of command line arguments, you can also d
 
 We can now run the command as follows (note the kubeconfig flag to specify a unique kubeconfig file to write):
 ```
-$ eksctl create cluster --config-file=eks-demo-bottlerocket.yaml --kubeconfig=.kube/eks-demo-bottlerocket
+$ eksctl create cluster --config-file=eks-demo-bottlerocket.yaml --kubeconfig=./eks-demo-bottlerocket
 ```
 
 Now go and get a cup of coffee, this takes a while (almost one hour for me for some reason). The final message should be similar to:
@@ -130,8 +130,8 @@ The script we want to run on all of the nodes is:
 ```
 #!/bin/bash
 mkfs -t ext4 /dev/xvdb
-mkdir -p /var/lib/storageos
-mount /dev/xvdb /var/lib/storageos
+mkdir -p /var/lib/storageos/data
+mount /dev/xvdb /var/lib/storageos/data
 ```
 As we specified ssh access with the `eksctl` command we can just ssh to the nodes and run this using `ssh ec2-user@<publicipaddress> as we also injected out public ssh key.
 
@@ -202,85 +202,45 @@ Rather than set the feature flags on a per PVC level, we are now also going to d
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: rep-enc-tap
-provisioner: csi.storageos.com 
+  name: storageos-rep-enc-tap
+provisioner: csi.storageos.com
 allowVolumeExpansion: true
 parameters:
   csi.storage.k8s.io/fstype: ext4
-  storageos.com/replicas: "2" # Labels allowed only when using CSI
-  storageos.com/encryption: "true" # Enable encryption
-  storageos.com/topology-aware: true # Enable TAP
-  # Change the NameSpace below if StorageOS doesn't run in kube-system
-  csi.storage.k8s.io/controller-expand-secret-name: csi-controller-expand-secret
-  csi.storage.k8s.io/controller-publish-secret-name: csi-controller-publish-secret
-  csi.storage.k8s.io/node-publish-secret-name: csi-node-publish-secret
-  csi.storage.k8s.io/provisioner-secret-name: csi-provisioner-secret
-  csi.storage.k8s.io/controller-expand-secret-namespace: kube-system   # NameSpace that runs StorageOS Daemonset
-  csi.storage.k8s.io/controller-publish-secret-namespace: kube-system  # NameSpace that runs StorageOS Daemonset
-  csi.storage.k8s.io/node-publish-secret-namespace: kube-system        # NameSpace that runs StorageOS Daemonset
-  csi.storage.k8s.io/provisioner-secret-namespace: kube-system         # NameSpace that runs StorageOS Daemonset
+  storageos.com/replicas: "2"
+  storageos.com/encryption: "true"
+  storageos.com/topology-aware: "true"
+  csi.storage.k8s.io/secret-name: storageos-api
+  csi.storage.k8s.io/secret-namespace: storageos
+  csi.storage.k8s.io/controller-expand-secret-namespace: storageos # NameSpace that runs StorageOS Daemonset
+  csi.storage.k8s.io/controller-publish-secret-namespace: storageos  # NameSpace that runs StorageOS Daemonset
+  csi.storage.k8s.io/node-publish-secret-namespace: storageos        # NameSpace that runs StorageOS Daemonset
+  csi.storage.k8s.io/provisioner-secret-namespace: storageos         # NameSpace that runs StorageOS Daemonset
 ```
-Save the above to a file and use `kubectl apply -f <filename>` to apply it to your cluster to make a new storage class of `rep-enc-tap`
+Save the above to a file and use `kubectl apply -f <filename>` to apply it to your cluster to make a new storage class of `storageos-rep-enc-tap`
+You can check this by running `kubectl get sc` and you should see this in the output.
 
-
-
+Last step - rather than having to specify the storage class for deployments, I am going to make it so that the cluster uses the new rep-enc-tap storage class as the default using:
+```
+kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl patch storageclass storageos-rep-enc-tap -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+```
+### Workload on top of out cluster
+I am looking to build a Database As A Service on top of
 https://github.com/CrunchyData/postgres-operator
 ```
 git clone --depth=1 https://github.com/CrunchyData/postgres-operator.git
 ```
-
-```
-aws ec2 create-launch-template \
-          --launch-template-name chris-sademo-ondat-1disk \
-          --version-description version1 \
-          --launch-template-data '{"BlockDeviceMappings":[{"DeviceName":"/dev/sda","Ebs":{"VolumeSize":100,"VolumeType":"gp2","DeleteOnTermination":true}}]}'
-```
-```
-{
-    "LaunchTemplate": {
-        "LaunchTemplateId": "lt-02145ec1905999167",
-        "LaunchTemplateName": "chris-sademo-ondat-1disk",
-        "CreateTime": "2021-11-19T13:41:24+00:00",
-        "CreatedBy": "arn:aws:iam::499176610670:user/chris.milsted",
-        "DefaultVersionNumber": 1,
-        "LatestVersionNumber": 1
-    }
-}
-```
-
-```
-aws ec2 modify-launch-template --launch-template-id "lt-06d043edaf960e254" --default-version "3" --region "eu-central-1"
-```
-
-#!/bin/bash
-mkfs -t ext4 /dev/xvdb
-mkdir -p /var/lib/storageos
-mount /dev/xvdb /var/lib/storageos
+https://access.crunchydata.com/documentation/postgres-operator/v5/quickstart/ 
 
 
-kubectl apply -f- <<EOF
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
- name: topsecret
- labels:
- app: storageos
-provisioner: csi.storageos.com # CSI Driver
-allowVolumeExpansion: true
-parameters:
- storageos.com/replicas: "2" # 3 copies of Data, 1 Primary, 2 Replicas
- storageos.com/encryption: "true" # Enable encryption
- storageos.com/topology-aware: true # Enable TAP
- csi.storage.k8s.io/controller-expand-secret-name: csi-controller-expand-secret csi.storage.k8s.io/controller-expand-secret-namespace: kube-system
- csi.storage.k8s.io/controller-publish-secret-name: csi-controller-publish-secret csi.storage.k8s.io/controller-publish-secret-namespace: kube-system
- csi.storage.k8s.io/fstype: ext4
- csi.storage.k8s.io/node-publish-secret-name: csi-node-publish-secret
- csi.storage.k8s.io/node-publish-secret-namespace: kube-system
- csi.storage.k8s.io/provisioner-secret-name: csi-provisioner-secret
- csi.storage.k8s.io/provisioner-secret-namespace: kube-system
-EOF
 
+### Removal and deletion
 
+kubectl delete -f ./pg-databases.yml
+kubectl storageos uninstall
+eksctl delete cluster --region=eu-central-1 --name=chris-eks-demo-cluster
+*NOTE* The volumes are not deleted for some reason.
 
 # Links
 
@@ -354,7 +314,7 @@ Content-Type: text/x-shellscript; charset="us-ascii"
 
 #!/bin/bash
 mkfs -t ext4 /dev/sda
-mkdir -p /var/lib/storageos
-mount /dev/sda /var/lib/storageos
+mkdir -p /var/lib/storageos/data
+mount /dev/sda /var/lib/storageos/data
 
 --==BOUNDARY==--
