@@ -1,0 +1,11 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: storageos-rep
+provisioner: csi.storageos.com
+allowVolumeExpansion: true
+parameters:
+  csi.storage.k8s.io/fstype: ext4
+  storageos.com/replicas: "1"
+  csi.storage.k8s.io/secret-name: storageos-api
+  csi.storage.k8s.io/secret-namespace: storageos

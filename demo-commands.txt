@@ -1,0 +1,48 @@
+kubectl get pods -A
+
+ssh  -o StrictHostKeyChecking=no  ec2-user@
+
+sudo i
+
+mkfs -t ext4 /dev/xvdb
+mkdir -p /var/lib/storageos/data
+mount /dev/xvdb /var/lib/storageos/data
+
+kubectl storageos help
+
+kubectl storageos preflight
+
+kubectl storageos install --include-etcd --etcd-storage-class "gp2" --admin-username "admin" --admin-password "hamster-capacitor-nailgun" --stos-version v2.5.0-beta.5 
+
+cd /home/chris/git-top/sa-demo-ondat/storage-classes
+
+kubectl apply -f .
+
+kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl patch storageclass storageos-rep-enc-tap -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+kubectl get sc
+
+cd /home/chris/git-top/sa-demo-ondat/pvc
+
+kubectl apply -f .
+
+kubectl port-forward -n storageos svc/storageos 5705
+
+kubectl get pc <name>
+kubectl get secrets
+
+cd /home/chris/git-top/postgres-operator-examples
+
+kubectl apply -k kustomize/install
+
+kubectl get pods -n postgres-operator
+
+cd /home/chris/git-top/sa-demo-ondat
+
+kubectl apply -f ./pg-databases.yml
+
+kubectl get postgresclusters.postgres-operator.crunchydata.com -n postgres-operator
+
+
+

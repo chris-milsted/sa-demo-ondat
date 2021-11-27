@@ -238,8 +238,11 @@ https://access.crunchydata.com/documentation/postgres-operator/v5/quickstart/
 ### Removal and deletion
 
 kubectl delete -f ./pg-databases.yml
+
 kubectl storageos uninstall
+
 eksctl delete cluster --region=eu-central-1 --name=chris-eks-demo-cluster
+
 *NOTE* The volumes are not deleted for some reason.
 
 # Links

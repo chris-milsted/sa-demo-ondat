@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: developer-requested-rep-enc
+  labels:
+      storageos.com/replicas: "1" # ask for 1 replica of the data
+      storageos.com/encryption: "true" # Ask for the volume to be encrypted
+spec:
+  storageClassName: storageos
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

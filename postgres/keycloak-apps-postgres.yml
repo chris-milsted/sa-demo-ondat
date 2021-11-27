@@ -1,0 +1,507 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak1
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo1-pguser-hippo1, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo1-pguser-hippo1, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo1-pguser-hippo1, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo1-pguser-hippo1, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo1-pguser-hippo1, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak2
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo2-pguser-hippo2, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo2-pguser-hippo2, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo2-pguser-hippo2, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo2-pguser-hippo2, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo2-pguser-hippo2, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak3
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo3-pguser-hippo3, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo3-pguser-hippo3, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo3-pguser-hippo3, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo3-pguser-hippo3, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo3-pguser-hippo3, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak4
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo4-pguser-hippo4, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo4-pguser-hippo4, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo4-pguser-hippo4, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo4-pguser-hippo4, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo4-pguser-hippo4, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak5
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo5-pguser-hippo5, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo5-pguser-hippo5, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo5-pguser-hippo5, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo5-pguser-hippo5, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo5-pguser-hippo5, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak6
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo6-pguser-hippo6, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo6-pguser-hippo6, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo6-pguser-hippo6, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo6-pguser-hippo6, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo6-pguser-hippo6, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak7
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo7-pguser-hippo7, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo7-pguser-hippo7, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo7-pguser-hippo7, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo7-pguser-hippo7, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo7-pguser-hippo7, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak8
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo8-pguser-hippo8, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo8-pguser-hippo8, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo8-pguser-hippo8, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo8-pguser-hippo8, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo8-pguser-hippo8, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak9
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo9-pguser-hippo9, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo9-pguser-hippo9, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo9-pguser-hippo9, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo9-pguser-hippo9, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo9-pguser-hippo9, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak10
+  namespace: postgres-operator
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keycloak
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: keycloak
+    spec:
+      containers:
+      - image: quay.io/keycloak/keycloak:latest
+        name: keycloak
+        env:
+        - name: DB_VENDOR
+          value: "postgres"
+        - name: DB_ADDR
+          valueFrom: { secretKeyRef: { name: hippo10-pguser-hippo10, key: host } }
+        - name: DB_PORT
+          valueFrom: { secretKeyRef: { name: hippo10-pguser-hippo10, key: port } }
+        - name: DB_DATABASE
+          valueFrom: { secretKeyRef: { name: hippo10-pguser-hippo10, key: dbname } }
+        - name: DB_USER
+          valueFrom: { secretKeyRef: { name: hippo10-pguser-hippo10, key: user } }
+        - name: DB_PASSWORD
+          valueFrom: { secretKeyRef: { name: hippo10-pguser-hippo10, key: password } }
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "admin"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+      restartPolicy: Always

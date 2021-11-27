@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: developer-requested-rep-enc-tap
+  labels:
+      storageos.com/replicas: "1" # ask for 1 replica of the data
+      storageos.com/encryption: "true" # Ask for the volume to be encrypted
+      storageos.com/topology-aware: "true" # distribute data and replicas by AZ
+spec:
+  storageClassName: storageos
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
