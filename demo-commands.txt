@@ -18,6 +18,8 @@ cd /home/chris/git-top/sa-demo-ondat/storage-classes
 
 kubectl apply -f .
 
+kubectl get sc
+
 kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 kubectl patch storageclass storageos-rep-enc-tap -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
@@ -38,11 +40,13 @@ kubectl apply -k kustomize/install
 
 kubectl get pods -n postgres-operator
 
-cd /home/chris/git-top/sa-demo-ondat
+cd /home/chris/git-top/sa-demo-ondat/postgres
 
 kubectl apply -f ./pg-databases.yml
 
 kubectl get postgresclusters.postgres-operator.crunchydata.com -n postgres-operator
+
+kubectl apply -f ./keycloak-apps-postgres.yml
 
 
 
