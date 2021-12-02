@@ -13,6 +13,7 @@ iam:
 nodeGroups:
   - name: chris-1a
     instanceType: t2.medium
+    amiFamily: AmazonLinux2 
     iam: 
       withAddonPolicies:
         ebs: true
@@ -28,6 +29,7 @@ nodeGroups:
 
   - name: chris-1b
     instanceType: t2.medium
+    amiFamily: AmazonLinux2
     iam: 
       withAddonPolicies:
         ebs: true
@@ -43,6 +45,7 @@ nodeGroups:
       
   - name: chris-1c
     instanceType: t2.medium
+    amiFamily: AmazonLinux2
     iam: 
       withAddonPolicies:
         ebs: true
