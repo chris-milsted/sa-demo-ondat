@@ -1,56 +1,96 @@
 # Demo Building
 
-I am running Fedora 35 currently, so the first steps are to get the utilities onto my machine so that I can talk to AWS via the API using either eksctl or Terraform modules to make this simpler.
+- [Demo Building](#demo-building)
+- [Pre-requisites - Setting Up My Laptop](#pre-requisites---setting-up-my-laptop)
+    - [Install `terraform`](#install-terraform)
+    - [Install `aws`](#install-aws)
+    - [Install `eksctl`](#install-eksctl)
+- [Onto Building EKS Clusters](#onto-building-eks-clusters)
+    - [eksctl](#eksctl)
+      - [Manual steps that need automating in the future](#manual-steps-that-need-automating-in-the-future)
+    - [installing OnDat](#installing-ondat)
+  - [Creating topology awareness in our 2.5 cluster](#creating-topology-awareness-in-our-25-cluster)
+    - [Workload on top of out cluster](#workload-on-top-of-out-cluster)
+    - [Removal and deletion](#removal-and-deletion)
+- [Links](#links)
+- [Notes](#notes)
+    - [working out what the AZ's are called](#working-out-what-the-azs-are-called)
 
-# Pre-requisites - setting up my laptop
+# Pre-requisites - Setting Up My Laptop
 
-### Install Terraform
+### Install `terraform` 
 
-From the link [6] below I ran the following to install the terraform command:
+* From the link [6] below I ran the following to install the terraform command:
 
 ```bash
-sudo dnf install -y dnf-plugins-core
-sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
-dnf install terrform
+# Fedora users
+$ sudo dnf install -y dnf-plugins-core
+$ sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+$ dnf install terrform
+
+# MacOS users
+$ brew install terraform
 ```
-We can check this has worked with the following:
+
+* We can check this has worked with the following:
+
 ```bash
 $ terraform version
 Terraform v1.0.11
 on linux_amd64
 ```
 
-### Install aws cli
+### Install `aws`
 
-I am going to use the V2 cli and follow the install instructiosn at [8] 
+* I am going to use the V2 cli and follow the install instructiosn at [8] 
 ```bash
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
+# Fedora users
+$ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+$ unzip awscliv2.zip
+$ sudo ./aws/install
+
+# MacOS users
+$ brew install awscli
 ```
 
-And again we can check this with :
+* And again we can check this with:
 
 ```bash
 $ aws --version
 aws-cli/2.3.7 Python/3.8.8 Linux/5.14.17-301.fc35.x86_64 exe/x86_64.fedora.35 prompt/off
 ```
 
-### Install eksctl 
+* Configure the `aws` cli with your AWS account credentials:
 
-This can be done following the instructions at [7] which are:
-```
-curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-sudo mv /tmp/eksctl /usr/local/bin
+```bash
+$ aws configure
+AWS Access Key ID [None]: YOUR_ACCESS_KEY_ID
+AWS Secret Access Key [None]: YOUR_SECRET_ACCESS_KEY
+Default region name [None]: YOUR_DEFAULT_AWS_REGION
+Default output format [None]: YOUR_DEFAULT_OUTPUT_FORMAT
 ```
 
-We can test this again with:
+### Install `eksctl` 
+
+* This can be done following the instructions at [7] which are:
+
+```bash
+# Fedora users
+$ curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+$ sudo mv /tmp/eksctl /usr/local/bin
+
+# MacOS users
+$ brew install eksctl
+```
+
+* We can test this again with:
+
 ```
 $ eksctl version
 0.73.0
 ```
 
-# Onto building clusters 
+# Onto Building EKS Clusters 
 
 ### eksctl
 
