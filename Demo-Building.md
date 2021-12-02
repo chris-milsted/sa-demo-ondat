@@ -6,7 +6,8 @@
     - [Install `aws`](#install-aws)
     - [Install `eksctl`](#install-eksctl)
 - [Onto Building EKS Clusters](#onto-building-eks-clusters)
-    - [eksctl](#eksctl)
+    - [Create SSH Keys](#create-ssh-keys)
+    - [Using `eksctl`](#using-eksctl)
       - [Manual steps that need automating in the future](#manual-steps-that-need-automating-in-the-future)
     - [installing OnDat](#installing-ondat)
   - [Creating topology awareness in our 2.5 cluster](#creating-topology-awareness-in-our-25-cluster)
@@ -16,19 +17,22 @@
 - [Notes](#notes)
     - [working out what the AZ's are called](#working-out-what-the-azs-are-called)
 
+
+
 # Pre-requisites - Setting Up My Laptop
 
+* I am running Fedora 35 currently, so the first steps are to get the utilities onto my machine so that I can talk to AWS via the API using either eksctl or Terraform modules to make this simpler.
 ### Install `terraform` 
 
 * From the link [6] below I ran the following to install the terraform command:
 
 ```bash
-# Fedora users
+# Fedora users.
 $ sudo dnf install -y dnf-plugins-core
 $ sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
 $ dnf install terrform
 
-# MacOS users
+# MacOS users.
 $ brew install terraform
 ```
 
@@ -42,14 +46,14 @@ on linux_amd64
 
 ### Install `aws`
 
-* I am going to use the V2 cli and follow the install instructiosn at [8] 
+* I am going to use the V2 cli and follow the install instructiosn at [8]:
 ```bash
-# Fedora users
+# Fedora users.
 $ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 $ unzip awscliv2.zip
 $ sudo ./aws/install
 
-# MacOS users
+# MacOS users.
 $ brew install awscli
 ```
 
@@ -75,11 +79,11 @@ Default output format [None]: YOUR_DEFAULT_OUTPUT_FORMAT
 * This can be done following the instructions at [7] which are:
 
 ```bash
-# Fedora users
+# Fedora users.
 $ curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
 $ sudo mv /tmp/eksctl /usr/local/bin
 
-# MacOS users
+# MacOS users.
 $ brew install eksctl
 ```
 
@@ -92,28 +96,62 @@ $ eksctl version
 
 # Onto Building EKS Clusters 
 
-### eksctl
+### Create SSH Keys
 
-The first thing I want to try out is the `eksctl` command to spin up a cluster. By default this will make some assumptions about region, images to use and other parameters. I want to override these and use a specified region and also use the bottlerocket images as these already container the right modules loaded in the linux kernel to provide Linux IO.
+* Create SSH keys for your EC2 instances [10] in the region where you will create the cluster. This will give you the option you to SSH into worker nodes.
 
-Rather than come up with a massive set of command line arguments, you can also declaratively define your cluster in a yaml ClusterConfig for the the `eksctl` command. The one I defined is here:
+```bash
+# create your key pair.
+$ aws ec2 create-key-pair \
+    --key-name="key_pair_name" \
+    --key-type="ed25519" \
+    --region="eu-central-1" \
+    --query="KeyMaterial" \
+    --output="text" > ~/.ssh/key_pair_name.pem
 
-[eks-demo-bottlerocket.yaml](./eks-demo-bottlerocket.yaml)
-
-We can now run the command as follows (note the kubeconfig flag to specify a unique kubeconfig file to write):
+# change the file permission for your key pair.
+$ chmod 400 ~/.ssh/key_pair_name.pem
 ```
-$ eksctl create cluster --config-file=eks-demo-bottlerocket.yaml --kubeconfig=./eks-demo-bottlerocket
+
+* To get the username for your EC2 instance, review the [official documentation for EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/connection-prereqs.html#connection-prereqs-get-info-about-instance).
+
+### Using `eksctl`
+
+* The first thing I want to try out is the `eksctl` command to spin up a cluster. By default this will make some assumptions about region, images to use and other parameters. I want to override these and use a specified region and also use the bottlerocket or Amazon Linux 2 images as these already container the right modules loaded in the linux kernel to provide Linux IO.
+
+* Rather than come up with a massive set of command line arguments, you can also declaratively define your cluster in a yaml ClusterConfig for the the `eksctl` command. The one I defined is here:
+  * [eks-demo-chris.yaml](./eks-demo-chris.yaml)
+
+* Make a copy of `eks-demo-chris.yaml` and make changes to the key value pairs in the configuration file to what you prefer; 
+  * ie, [`metadata.name`, `metadata.region`, `nodeGroups.amiFamily`, `nodeGroups.ssh.allow`, `nodeGroups.ssh.allow.publicKeyName`] etc;
+
+```bash
+$ cp eks-demo-chris.yaml eks-demo-username.yaml
+$ vim eks-demo-username.yaml
 ```
 
-Now go and get a cup of coffee, this takes a while (almost one hour for me for some reason). The final message should be similar to:
+* We can now run the command as follows (note the `kubeconfig` flag to specify a unique kubeconfig file to write):
+
+```bash
+# create the EKS cluster with your custom configuration file and 
+# store the cluster kubeconfig file under `~/.kube/eksctl/clusters`.
+$ eksctl create cluster --config-file=eks-demo-username.yaml --auto-kubeconfig
 ```
+
+* Now go and get a cup of coffee, this takes a while (almost one hour for me for some reason). The final message should be similar to:
+
+```bash 
 2021-11-18 16:26:06 [✔]  EKS cluster "chris-eks-demo-cluster" in "eu-central-1" region is ready
 ```
 
-We can check that the cluster is up and running a simple kubectl command:
+* We can check that the cluster is up and running a simple kubectl command:
 
-```
-$ kubectl --kubeconfig=~/.kube/eks-demo-bottlerocket get pods -A
+```bash 
+# obtain your cluster credentials.
+$ eksctl utils write-kubeconfig --cluster=eks-demo-username-cluster --region=eu-central-1
+
+# inspect the pods of your newly provisioned cluster.
+$ kubectl get pods -A
 NAMESPACE     NAME                       READY   STATUS    RESTARTS   AGE
 kube-system   aws-node-45ndt             1/1     Running   0          2m34s
 kube-system   aws-node-775nd             1/1     Running   0          4m38s
@@ -302,6 +340,10 @@ eksctl delete cluster --region=eu-central-1 --name=chris-eks-demo-cluster
 [7] https://github.com/weaveworks/eksctl
 
 [8] https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+
+[9] https://docs.aws.amazon.com/eks/latest/userguide/launch-node-bottlerocket.html
+
+[10][https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair)
 
 # Notes 
 
