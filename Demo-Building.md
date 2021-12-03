@@ -457,7 +457,7 @@ resourcequota "storageos-critical-pods" deleted
 
 # destroy the environment created with `eksctl` once you 
 # are finished testing out EKS & Ondat.
-eksctl delete cluster --region=eu-central-1 --name=eks-demo-username-cluster
+$ eksctl delete cluster --region=eu-central-1 --name=eks-demo-username-cluster
 ```
 
 * *NOTE* The volumes are not deleted for some reason.
