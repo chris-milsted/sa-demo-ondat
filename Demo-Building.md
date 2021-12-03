@@ -14,7 +14,7 @@
     - [Running Workloads Ontop Of Our Cluster](#running-workloads-ontop-of-our-cluster)
       - [Using Ondat Feature Labels In Persistent Volume Claims](#using-ondat-feature-labels-in-persistent-volume-claims)
       - [Using Ondat Feature Labels In A Storage Class](#using-ondat-feature-labels-in-a-storage-class)
-    - [Accessing Ondat's UI;](#accessing-ondats-ui)
+    - [Accessing Ondat's UI](#accessing-ondats-ui)
     - [Removal & Deletion](#removal--deletion)
 - [Links](#links)
 - [Notes](#notes)
@@ -425,7 +425,7 @@ deployment.apps/keycloak10 created
 $ kubectl get pods --namespace=postgres-operator
 ```
 
-### Accessing Ondat's UI;
+### Accessing Ondat's UI
 
 * Use Ondat's UI to review the status of the cluster and the volumes.
 
