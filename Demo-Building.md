@@ -127,12 +127,12 @@ $ chmod 400 ~/.ssh/key_pair_name.pem
   * [eks-demo-chris.yaml](./eks-demo-chris.yaml)
 
 * Make a copy of `eks-demo-chris.yaml` and make changes to the key value pairs in the configuration file to what you prefer; 
-  * i.e.,
+  * i.e;
     * [`metadata.name`]
     * [`metadata.region`]
     * [`nodeGroups.amiFamily`]
     * [`nodeGroups.ssh.allow`]
-    * [`nodeGroups.ssh.allow.publicKeyName`]
+    * [`nodeGroups.ssh.publicKeyName`]
 
 ```bash
 $ cp eks-demo-chris.yaml eks-demo-username.yaml
