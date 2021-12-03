@@ -10,8 +10,8 @@
     - [Using `eksctl`](#using-eksctl)
       - [Manual steps that need automating in the future](#manual-steps-that-need-automating-in-the-future)
     - [Installing OnDat](#installing-ondat)
-  - [Creating topology awareness in our 2.5 cluster](#creating-topology-awareness-in-our-25-cluster)
-    - [Workload on top of out cluster](#workload-on-top-of-out-cluster)
+  - [Creating Topology Awareness In Our 2.5 Cluster](#creating-topology-awareness-in-our-25-cluster)
+    - [Running Workloads Ontop Of Our Cluster](#running-workloads-ontop-of-our-cluster)
     - [Removal and deletion](#removal-and-deletion)
 - [Links](#links)
 - [Notes](#notes)
@@ -273,10 +273,11 @@ storageos        storageos-operator-56bf9d4db7-prkxm                  2/2     Ru
 storageos        storageos-scheduler-f954cdbc5-m5w4z                  1/1     Running   0          3m46s
 ```
 
-## Creating topology awareness in our 2.5 cluster
+## Creating Topology Awareness In Our 2.5 Cluster
 
-From the docs, you are able to apply your own labels or the Topology Aware Placement (TAP) will look for the default k8s labels which are already set on this cluster:
-```
+* From the docs, you are able to apply your own labels or the [Topology Aware Placement (TAP)](https://docs.ondat.io/v2.5/docs/operations/tap/) will look for the default k8s labels which are already set on this cluster:
+
+```bash
 $ kubectl get nodes -o yaml |grep zone
       failure-domain.beta.kubernetes.io/zone: eu-central-1a
       topology.kubernetes.io/zone: eu-central-1a
@@ -286,10 +287,10 @@ $ kubectl get nodes -o yaml |grep zone
       topology.kubernetes.io/zone: eu-central-1c
 ```
 
-Here you can see that the topology zone flags are set on the nodes for OnDat to use.
-Rather than set the feature flags on a per PVC level, we are now also going to define a new storage class which will set repication, encryption and TAP so that we can build a secure, reaplicated production ready storage layer on top of this k8s cluster using OnDat:
+* Here you can see that the topology zone flags are set on the nodes for OnDat to use. 
+* Rather than set the feature flags on a per PVC level, we are now also going to define a new storage class which will set repication, encryption and TAP so that we can build a secure, reaplicated production ready storage layer on top of this k8s cluster using OnDat:
 
-```
+```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -303,23 +304,38 @@ parameters:
   storageos.com/topology-aware: "true"
   csi.storage.k8s.io/secret-name: storageos-api
   csi.storage.k8s.io/secret-namespace: storageos
-  csi.storage.k8s.io/controller-expand-secret-namespace: storageos # NameSpace that runs StorageOS Daemonset
-  csi.storage.k8s.io/controller-publish-secret-namespace: storageos  # NameSpace that runs StorageOS Daemonset
-  csi.storage.k8s.io/node-publish-secret-namespace: storageos        # NameSpace that runs StorageOS Daemonset
-  csi.storage.k8s.io/provisioner-secret-namespace: storageos         # NameSpace that runs StorageOS Daemonset
 ```
-Save the above to a file and use `kubectl apply -f <filename>` to apply it to your cluster to make a new storage class of `storageos-rep-enc-tap`
-You can check this by running `kubectl get sc` and you should see this in the output.
 
-Last step - rather than having to specify the storage class for deployments, I am going to make it so that the cluster uses the new rep-enc-tap storage class as the default using:
+* Save the above to a file and use `kubectl apply -f <filename>` to apply it to your cluster to make a new storage class of `storageos-rep-enc-tap`.
+* You can check this by running `kubectl get sc` and you should see this in the output.
+  * You can also find examples of custom storage classes in [storage-classes/](./storage-classes/);
+
+```bash
+# create storage classes.
+$ kubectl apply -f storage-classes/
+
+# inspect the storage classes that have been created.
+$ kubectl get sc
 ```
-kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+
+* Last step - rather than having to specify the storage class for deployments, I am going to make it so that the cluster uses the new `rep-enc-tap` storage class as the default using:
+
+```bash
+# make `gp2` storage class non default.
+$ kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+
+# make `storageos-rep-enc-tap` storage class default.
 kubectl patch storageclass storageos-rep-enc-tap -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+
+# inspect the storage classes that have been created.
+$ kubectl get sc
 ```
-### Workload on top of out cluster
-I am looking to build a Database As A Service on top of
-https://github.com/CrunchyData/postgres-operator
-```
+
+### Running Workloads Ontop Of Our Cluster
+
+* I am looking to build a Database As A Service on top of https://github.com/CrunchyData/postgres-operator
+
+```bash
 git clone --depth=1 https://github.com/CrunchyData/postgres-operator.git
 ```
 https://access.crunchydata.com/documentation/postgres-operator/v5/quickstart/ 
@@ -356,7 +372,7 @@ eksctl delete cluster --region=eu-central-1 --name=chris-eks-demo-cluster
 
 [9] https://docs.aws.amazon.com/eks/latest/userguide/launch-node-bottlerocket.html
 
-[10][https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair)
+[10]https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair
 
 # Notes 
 
