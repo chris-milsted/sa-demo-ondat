@@ -9,7 +9,7 @@
     - [Create SSH Keys](#create-ssh-keys)
     - [Using `eksctl`](#using-eksctl)
       - [Manual steps that need automating in the future](#manual-steps-that-need-automating-in-the-future)
-    - [installing OnDat](#installing-ondat)
+    - [Installing OnDat](#installing-ondat)
   - [Creating topology awareness in our 2.5 cluster](#creating-topology-awareness-in-our-25-cluster)
     - [Workload on top of out cluster](#workload-on-top-of-out-cluster)
     - [Removal and deletion](#removal-and-deletion)
@@ -205,43 +205,56 @@ Manual steps I am currently following:
 The next step, again which if we could specify user data and a custom set of commands to be run in a launch template, is to setup the second volume as the storageOS data volume for this testing so we can get stats for this volume as we do the testing.
 
 The script we want to run on all of the nodes is:
-```
+  * [filesystem.sh](./filesystem.sh)
+
+```bash 
 #!/bin/bash
 mkfs -t ext4 /dev/xvdb
 mkdir -p /var/lib/storageos/data
 mount /dev/xvdb /var/lib/storageos/data
 ```
-As we specified ssh access with the `eksctl` command we can just ssh to the nodes and run this using `ssh ec2-user@<publicipaddress> as we also injected out public ssh key.
+
+As we specified ssh access with the `eksctl` command we can just ssh to the nodes and run this using `ssh ec2-user@<public_ip_address>` as we also injected out public ssh key.
 
 On all three worker nodes login and run the above commands which should end up with a result as:
-```
+
+```bash
 # mount |grep xvdb
 /dev/xvdb on /var/lib/storageos type ext4 (rw,relatime)
 ```
 
 This completes the node setup and we can move onto installing OnDat...
 
+### Installing OnDat
 
-### installing OnDat
+* Assuming that you have the kubeconfig populated from the above command, if not you can always retrieve this using:
 
-Assuming that you have the kubeconfig populated from the above command, if not you can always retrieve this using:
+```bash
+# obtain your cluster credentials.
+$ eksctl utils write-kubeconfig --cluster=eks-demo-username-cluster --region=eu-central-1
 ```
-eksctl utils write-kubeconfig --cluster=chris-eks-demo-cluster
-```
-Either use this in your `.kube/config` file or `export KUBECONFIG=pathtofile` as you would do normally.
+* Either use this in your `~/.kube/config` file or `export KUBECONFIG=pathtofile` as you would do normally.
 
-I am going to be using 2.5+ of OnDat will be to install the kubectl plugin. This will automate the install of OnDat and also create the local etcd cluster.
-I am going to also let the operator install an etcd cluster using the new etcd operator which is based on the improbable engineering project. 
-If you recall above as well I also enabled EBS storage in the cluster as I need an EBS volume to exist to install etcd before I can then install and start using OnDat volumes as we record the metadata into this etcd database to co-ordinate locks and our distributed systems.
+* I am going to be using 2.5+ of OnDat - the installation will be done with the [`kubectl-storageos`](https://github.com/storageos/kubectl-storageos) plugin. This will automate the installation of OnDat and also create the local etcd cluster.
+* I am going to also let the operator install an etcd cluster using the new etcd operator which is based on the improbable engineering project. 
+* If you recall above as well I also enabled EBS storage in the cluster as I need an EBS volume to exist to install etcd before I can then install and start using OnDat volumes as we record the metadata into this etcd database to co-ordinate locks and our distributed systems.
 
-The command to install my cluster, will be:
+* The command to install my cluster, will be:
 
+```bash
+# check that the plugin is in your path.
+$ kubectl storageos help
+
+# run a preflight check.
+$ kubectl storageos preflight
+
+# install ondat.
+$ kubectl storageos install --include-etcd --etcd-storage-class "gp2" --admin-username "admin" --admin-password "hamster-capacitor-nailgun" --stos-version v2.5.0-beta.5
 ```
-export KUBECONFIG=.kube/eks-demo-bottlerocket
-kubectl storageos install --include-etcd --etcd-storage-class "gp2" --admin-username "admin" --admin-password "hamster-capacitor-nailgun" --stos-version v2.5.0-beta.5
-```
-You can see if this has been successful again with checking the pods:
-```
+
+* You can see if this has been successful again with checking the pods:
+
+```bash
 $ kubectl get pods -A
 NAMESPACE        NAME                                                 READY   STATUS    RESTARTS   AGE
 ...[SNIP]
