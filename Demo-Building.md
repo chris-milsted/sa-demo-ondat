@@ -10,21 +10,24 @@
     - [Using `eksctl`](#using-eksctl)
       - [Manual steps that need automating in the future](#manual-steps-that-need-automating-in-the-future)
     - [Installing OnDat](#installing-ondat)
-  - [Creating Topology Awareness In Our 2.5 Cluster](#creating-topology-awareness-in-our-25-cluster)
+  - [Creating Topology Awareness In Our Ondat 2.5+ EKS Cluster](#creating-topology-awareness-in-our-ondat-25-eks-cluster)
     - [Running Workloads Ontop Of Our Cluster](#running-workloads-ontop-of-our-cluster)
-    - [Removal and deletion](#removal-and-deletion)
+      - [Using Ondat Feature Labels In Persistent Volume Claims](#using-ondat-feature-labels-in-persistent-volume-claims)
+      - [Using Ondat Feature Labels In A Storage Class](#using-ondat-feature-labels-in-a-storage-class)
+    - [Accessing Ondat's UI;](#accessing-ondats-ui)
+    - [Removal & Deletion](#removal--deletion)
 - [Links](#links)
 - [Notes](#notes)
-    - [working out what the AZ's are called](#working-out-what-the-azs-are-called)
+    - [Working out what the AZ's are called](#working-out-what-the-azs-are-called)
 
 
 
 # Pre-requisites - Setting Up My Laptop
 
-* I am running Fedora 35 currently, so the first steps are to get the utilities onto my machine so that I can talk to AWS via the API using either eksctl or Terraform modules to make this simpler.
+* I am running Fedora 35 currently, so the first steps are to get the utilities onto my machine so that I can talk to AWS via the API using either `eksctl` or Terraform modules to make this simpler.
 ### Install `terraform` 
 
-* From the link [6] below I ran the following to install the terraform command:
+* From the link [6] below, I ran the following to install the terraform command:
 
 ```bash
 # Fedora users.
@@ -32,7 +35,7 @@ $ sudo dnf install -y dnf-plugins-core
 $ sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
 $ dnf install terrform
 
-# MacOS users.
+# macOS users.
 $ brew install terraform
 ```
 
@@ -46,14 +49,15 @@ on linux_amd64
 
 ### Install `aws`
 
-* I am going to use the V2 cli and follow the install instructiosn at [8]:
+*  I am going to use the V2 CLI and follow the installation instructions at [8]:
+
 ```bash
 # Fedora users.
 $ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 $ unzip awscliv2.zip
 $ sudo ./aws/install
 
-# MacOS users.
+# macOS users.
 $ brew install awscli
 ```
 
@@ -64,7 +68,7 @@ $ aws --version
 aws-cli/2.3.7 Python/3.8.8 Linux/5.14.17-301.fc35.x86_64 exe/x86_64.fedora.35 prompt/off
 ```
 
-* Configure the `aws` cli with your AWS account credentials:
+* Configure the `aws` CLI with your AWS account credentials:
 
 ```bash
 $ aws configure
@@ -83,7 +87,7 @@ Default output format [None]: YOUR_DEFAULT_OUTPUT_FORMAT
 $ curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
 $ sudo mv /tmp/eksctl /usr/local/bin
 
-# MacOS users.
+# macOS users.
 $ brew install eksctl
 ```
 
@@ -98,7 +102,7 @@ $ eksctl version
 
 ### Create SSH Keys
 
-* Create SSH keys for your EC2 instances [10] in the region where you will create the cluster. This will give you the option you to SSH into worker nodes.
+* Create SSH keys for your EC2 instances [10] in the region where you will create the cluster. This will give you the option to SSH into worker nodes.
 
 ```bash
 # create your key pair.
@@ -117,13 +121,18 @@ $ chmod 400 ~/.ssh/key_pair_name.pem
 
 ### Using `eksctl`
 
-* The first thing I want to try out is the `eksctl` command to spin up a cluster. By default this will make some assumptions about region, images to use and other parameters. I want to override these and use a specified region and also use the bottlerocket or Amazon Linux 2 images as these already container the right modules loaded in the linux kernel to provide Linux IO.
+* The first thing I want to try out is the `eksctl` command to spin up a cluster. By default, this will make some assumptions about region, images to use and other parameters. I want to override these and use a specified region and also use the bottlerocket or Amazon Linux 2 images as these already container the right modules loaded in the Linux kernel to provide Linux IO.
 
-* Rather than come up with a massive set of command line arguments, you can also declaratively define your cluster in a yaml ClusterConfig for the the `eksctl` command. The one I defined is here:
+* Rather than come up with a massive set of command line arguments, you can also declaratively define your cluster in a YAML ClusterConfig for the `eksctl` command. The one I defined is here:
   * [eks-demo-chris.yaml](./eks-demo-chris.yaml)
 
 * Make a copy of `eks-demo-chris.yaml` and make changes to the key value pairs in the configuration file to what you prefer; 
-  * ie, [`metadata.name`, `metadata.region`, `nodeGroups.amiFamily`, `nodeGroups.ssh.allow`, `nodeGroups.ssh.allow.publicKeyName`] etc;
+  * i.e.,
+    * [`metadata.name`]
+    * [`metadata.region`]
+    * [`nodeGroups.amiFamily`]
+    * [`nodeGroups.ssh.allow`]
+    * [`nodeGroups.ssh.allow.publicKeyName`]
 
 ```bash
 $ cp eks-demo-chris.yaml eks-demo-username.yaml
@@ -169,7 +178,7 @@ kube-system   kube-proxy-zwx4c           1/1     Running   0          3m46s
 2. I then want to re-deploy the nodes (set the instance refresh with a 0% health replacement)
 3. Then I want to format with ext4 and mount the new disk at /var/lib/storageos (will put it as a dev1 etc in the future).
 
-It seems very difficult to do this with eksctl. I can either have a launch template with a managed node pool, but then I do not see to be able to set ssh allow:true. Or I can have a simple self managed node pool (which makes more sense for a stateful storage set of nodes anyway) but I do not seem to be able to then specify a lauch template with this to create more disks. I suspect that I may need to move this to terraform longer term, but so far my terraform file is about 140 lines long and still not complete with things like IAM roles and CSI/CNI plugins that eksctl provides.
+It seems very difficult to do this with `eksctl`. I can either have a launch template with a managed node pool, but then I do not see to be able to set ssh allow:true. Or I can have a simple self-managed node pool (which makes more sense for a stateful storage set of nodes anyway) but I do not seem to be able to then specify a launch template with this to create more disks. I suspect that I may need to move this to terraform longer term, but so far my terraform file is about 140 lines long and still not complete with things like IAM roles and CSI/CNI plugins that `eksctl` provides.
 
 Manual steps I am currently following:
 
@@ -196,7 +205,7 @@ Manual steps I am currently following:
 
 7. Now go back through steps 1, 2, 3 and 4 but instead of clicking to create a new launch template version, we are going to update the ASG to use the new template using the dropdown and select the new version 2 we just created. Click update at the bottom to confirm this change.
 ![select version 2](./images/aws-demo-5.png)
-8. Select to start an instance refresh to re-deploy our instances with out new template. Select out ASG and then select the instance refresh tab and then click "start instance refresh".
+8. Select to start an instance refresh to re-deploy our instances with our new template. Select out ASG and then select the instance refresh tab and then click "start instance refresh".
 ![Start an instance refresh](./images/aws-demo-6.png)
 9. Change the minimum healthy to 0% to kick this off immediately
 ![set healthy to zero percent](./images/aws-demo-7.png)
@@ -227,7 +236,7 @@ This completes the node setup and we can move onto installing OnDat...
 
 ### Installing OnDat
 
-* Assuming that you have the kubeconfig populated from the above command, if not you can always retrieve this using:
+* Assuming that you have the `kubeconfig` populated from the above command, if not you can always retrieve this using:
 
 ```bash
 # obtain your cluster credentials.
@@ -236,10 +245,10 @@ $ eksctl utils write-kubeconfig --cluster=eks-demo-username-cluster --region=eu-
 * Either use this in your `~/.kube/config` file or `export KUBECONFIG=pathtofile` as you would do normally.
 
 * I am going to be using 2.5+ of OnDat - the installation will be done with the [`kubectl-storageos`](https://github.com/storageos/kubectl-storageos) plugin. This will automate the installation of OnDat and also create the local etcd cluster.
-* I am going to also let the operator install an etcd cluster using the new etcd operator which is based on the improbable engineering project. 
+* I am going to also let the operator install an etcd cluster using the new etcd operator, which is based on the improbable engineering project. 
 * If you recall above as well I also enabled EBS storage in the cluster as I need an EBS volume to exist to install etcd before I can then install and start using OnDat volumes as we record the metadata into this etcd database to co-ordinate locks and our distributed systems.
 
-* The command to install my cluster, will be:
+* The command to install Ondat into my cluster, will be:
 
 ```bash
 # check that the plugin is in your path.
@@ -273,7 +282,7 @@ storageos        storageos-operator-56bf9d4db7-prkxm                  2/2     Ru
 storageos        storageos-scheduler-f954cdbc5-m5w4z                  1/1     Running   0          3m46s
 ```
 
-## Creating Topology Awareness In Our 2.5 Cluster
+## Creating Topology Awareness In Our Ondat 2.5+ EKS Cluster
 
 * From the docs, you are able to apply your own labels or the [Topology Aware Placement (TAP)](https://docs.ondat.io/v2.5/docs/operations/tap/) will look for the default k8s labels which are already set on this cluster:
 
@@ -288,7 +297,7 @@ $ kubectl get nodes -o yaml |grep zone
 ```
 
 * Here you can see that the topology zone flags are set on the nodes for OnDat to use. 
-* Rather than set the feature flags on a per PVC level, we are now also going to define a new storage class which will set repication, encryption and TAP so that we can build a secure, reaplicated production ready storage layer on top of this k8s cluster using OnDat:
+* Rather than set the feature flags on a per PVC level, we are now also going to define a new storage class which will set replication, encryption and TAP so that we can build a secure, replicated production ready storage layer on top of this k8s cluster using OnDat:
 
 ```yaml
 apiVersion: storage.k8s.io/v1
@@ -325,32 +334,133 @@ $ kubectl get sc
 $ kubectl patch storageclass gp2 -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
 
 # make `storageos-rep-enc-tap` storage class default.
-kubectl patch storageclass storageos-rep-enc-tap -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+$ kubectl patch storageclass storageos-rep-enc-tap -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 
-# inspect the storage classes that have been created.
+# inspect the storage classes for the new changes applied.
 $ kubectl get sc
 ```
 
 ### Running Workloads Ontop Of Our Cluster
 
-* I am looking to build a Database As A Service on top of https://github.com/CrunchyData/postgres-operator
+#### Using Ondat Feature Labels In Persistent Volume Claims
+
+* You can find examples of persistent volume claims and pod manifests that are using Ondat feature labels to enable useful capabilities in [pvc/](./pvc/);
+
 
 ```bash
-git clone --depth=1 https://github.com/CrunchyData/postgres-operator.git
+# create the PVCs and Pod manifests in this directory.
+$ kubectl apply -f pvc/
+
+# inspect the pods that have been created in the default namespace.
+$ kubectl get pods --all-namespaces
+
+# inspect the PVCs created.
+$ kubectl get pvc --all-namespaces
+$ kubectl describe pvc --all-namespaces
 ```
-https://access.crunchydata.com/documentation/postgres-operator/v5/quickstart/ 
 
+#### Using Ondat Feature Labels In A Storage Class
 
+* I am looking to build a Database as a Service (DBaaS) on top of https://github.com/CrunchyData/postgres-operator
 
-### Removal and deletion
+* First, we will use https://github.com/CrunchyData/postgres-operator-examples and install Postgres Operator from Crunchy Data using the following commands below;
 
-kubectl delete -f ./pg-databases.yml
+```bash
+# clone the repository.
+$ git clone https://github.com/CrunchyData/postgres-operator-examples
 
-kubectl storageos uninstall
+# install the postgres operator.
+$ kubectl apply -k kustomize/install
 
-eksctl delete cluster --region=eu-central-1 --name=chris-eks-demo-cluster
+# inspect the operator status to ensure that it is running.
+$ kubectl get pods,deployments --namespace=postgres-operator
 
-*NOTE* The volumes are not deleted for some reason.
+# navigate into `sa-demo-ondat/postgres/`, review `pg-databases.yml` 
+# and then create 10 postgres clusters named `hippo[N]` in 
+# the `postgres-operator` namespace.
+$ cd sa-demo-ondat/postgres/
+$ cat pg-databases.yml
+
+$ kubectl apply -f pg-databases.yml
+postgrescluster.postgres-operator.crunchydata.com/hippo1 created
+postgrescluster.postgres-operator.crunchydata.com/hippo2 created
+postgrescluster.postgres-operator.crunchydata.com/hippo3 created
+postgrescluster.postgres-operator.crunchydata.com/hippo4 created
+postgrescluster.postgres-operator.crunchydata.com/hippo5 created
+postgrescluster.postgres-operator.crunchydata.com/hippo6 created
+postgrescluster.postgres-operator.crunchydata.com/hippo7 created
+postgrescluster.postgres-operator.crunchydata.com/hippo8 created
+postgrescluster.postgres-operator.crunchydata.com/hippo9 created
+postgrescluster.postgres-operator.crunchydata.com/hippo10 created
+
+# inspect and track the progress of the postgres clusters being created.
+$ kubectl describe postgresclusters.postgres-operator.crunchydata.com hippo --namespace=postgres-operator 
+$ kubectl get pods --namespace=postgres-operator
+$ kubectl get pvc --namespace=postgres-operator
+$ kubectl get pv | grep "postgres-operator"
+```
+
+* Once the postgres clusters are now up and running, we will now connect an application > `keycloak` to our postgres clusters.
+
+```bash
+# navigate into `sa-demo-ondat/postgres/`, review `keycloak-apps-postgres.yml` 
+# and then create 10 keycloak instances named `keycloak[N]` in 
+# the `postgres-operator` namespace.
+$ cd sa-demo-ondat/postgres/
+$ cat keycloak-apps-postgres.yml
+
+$ kubectl apply -f keycloak-apps-postgres.yml
+deployment.apps/keycloak1 created
+deployment.apps/keycloak2 created
+deployment.apps/keycloak3 created
+deployment.apps/keycloak4 created
+deployment.apps/keycloak5 created
+deployment.apps/keycloak6 created
+deployment.apps/keycloak7 created
+deployment.apps/keycloak8 created
+deployment.apps/keycloak9 created
+deployment.apps/keycloak10 created
+
+# inspect and track the progress of the postgres clusters being created.
+$ kubectl get pods --namespace=postgres-operator
+```
+
+### Accessing Ondat's UI;
+
+* Use Ondat's UI to review the status of the cluster and the volumes.
+
+```bash
+# use port forwarding to access Ondat's UI.
+$ kubectl port-forward service/storageos 5705 --namespace=storageos
+
+# login to Ondat's UI using your preferred browser.
+http://localhost:5705/
+```
+
+### Removal & Deletion
+
+* You will need to remove the workloads that are using Ondat's StorageClasses first before you remove Ondat from your EKS Cluster. 
+
+```bash
+# delete the example workloads deployed in your cluster
+$ kubectl delete -f pvc/
+$ kubectl delete -f postgres/keycloak-apps-postgres.yml
+$ kubectl delete -f postgres/pg-databases.yml
+$ kubectl delete -k postgres-operator-examples/kustomize/install/
+
+# remove Ondat from the cluster.
+$ kubectl storageos uninstall --include-etcd
+Skip namespace deletion [y/N]: n
+Discovered StorageOS cluster and operator version v2.5.0-beta.8...
+resourcequota "storageos-critical-pods" deleted
+# ...truncated output
+
+# destroy the environment created with `eksctl` once you 
+# are finished testing out EKS & Ondat.
+eksctl delete cluster --region=eu-central-1 --name=eks-demo-username-cluster
+```
+
+* *NOTE* The volumes are not deleted for some reason.
 
 # Links
 
@@ -372,13 +482,15 @@ eksctl delete cluster --region=eu-central-1 --name=chris-eks-demo-cluster
 
 [9] https://docs.aws.amazon.com/eks/latest/userguide/launch-node-bottlerocket.html
 
-[10]https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair
+[10] https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair
+
+[11] https://access.crunchydata.com/documentation/postgres-operator/v5/quickstart/
 
 # Notes 
 
-### working out what the AZ's are called
+### Working out what the AZ's are called
 
-```
+```bash
 $ aws ec2 describe-availability-zones --region eu-central-1
 {
     "AvailabilityZones": [
@@ -419,7 +531,7 @@ $ aws ec2 describe-availability-zones --region eu-central-1
 }
 ```
 
-
+```bash
 Content-Type: multipart/mixed; boundary="==BOUNDARY=="
 MIME-Version: 1.0
 
@@ -432,3 +544,4 @@ mkdir -p /var/lib/storageos/data
 mount /dev/sda /var/lib/storageos/data
 
 --==BOUNDARY==--
+```bash
