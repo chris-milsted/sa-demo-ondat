@@ -157,7 +157,7 @@ $ eksctl create cluster --config-file=eks-demo-username.yaml --auto-kubeconfig
 
 ```bash 
 # obtain your cluster credentials.
-$ eksctl utils write-kubeconfig --cluster=eks-demo-username-cluster --region=eu-central-1
+$ eksctl utils write-kubeconfig --cluster=chris-eks-demo-cluster --region=eu-central-1
 
 # inspect the pods of your newly provisioned cluster.
 $ kubectl get pods -A
@@ -240,7 +240,7 @@ This completes the node setup and we can move onto installing OnDat...
 
 ```bash
 # obtain your cluster credentials.
-$ eksctl utils write-kubeconfig --cluster=eks-demo-username-cluster --region=eu-central-1
+$ eksctl utils write-kubeconfig --cluster=chris-eks-demo-cluster --region=eu-central-1
 ```
 * Either use this in your `~/.kube/config` file or `export KUBECONFIG=pathtofile` as you would do normally.
 
@@ -356,7 +356,6 @@ $ kubectl get pods --all-namespaces
 
 # inspect the PVCs created.
 $ kubectl get pvc --all-namespaces
-$ kubectl describe pvc --all-namespaces
 ```
 
 #### Using Ondat Feature Labels In A Storage Class
@@ -370,15 +369,15 @@ $ kubectl describe pvc --all-namespaces
 $ git clone https://github.com/CrunchyData/postgres-operator-examples
 
 # install the postgres operator.
-$ kubectl apply -k kustomize/install
+$ kubectl apply -k postgres-operator-examples/kustomize/install/
 
 # inspect the operator status to ensure that it is running.
 $ kubectl get pods,deployments --namespace=postgres-operator
 
-# navigate into `sa-demo-ondat/postgres/`, review `pg-databases.yml` 
+# navigate into `/sa-demo-ondat/postgres/`, review `pg-databases.yml` 
 # and then create 10 postgres clusters named `hippo[N]` in 
 # the `postgres-operator` namespace.
-$ cd sa-demo-ondat/postgres/
+$ cd postgres/
 $ cat pg-databases.yml
 
 $ kubectl apply -f pg-databases.yml
@@ -395,18 +394,16 @@ postgrescluster.postgres-operator.crunchydata.com/hippo10 created
 
 # inspect and track the progress of the postgres clusters being created.
 $ kubectl describe postgresclusters.postgres-operator.crunchydata.com hippo --namespace=postgres-operator 
-$ kubectl get pods --namespace=postgres-operator
-$ kubectl get pvc --namespace=postgres-operator
+$ kubectl get pods,deployments,pvc --namespace=postgres-operator
 $ kubectl get pv | grep "postgres-operator"
 ```
 
 * Once the postgres clusters are now up and running, we will now connect an application > `keycloak` to our postgres clusters.
 
 ```bash
-# navigate into `sa-demo-ondat/postgres/`, review `keycloak-apps-postgres.yml` 
+# in `/sa-demo-ondat/postgres/`, review `keycloak-apps-postgres.yml` 
 # and then create 10 keycloak instances named `keycloak[N]` in 
 # the `postgres-operator` namespace.
-$ cd sa-demo-ondat/postgres/
 $ cat keycloak-apps-postgres.yml
 
 $ kubectl apply -f keycloak-apps-postgres.yml
@@ -422,7 +419,7 @@ deployment.apps/keycloak9 created
 deployment.apps/keycloak10 created
 
 # inspect and track the progress of the postgres clusters being created.
-$ kubectl get pods --namespace=postgres-operator
+$ kubectl get pods,deployments --namespace=postgres-operator
 ```
 
 ### Accessing Ondat's UI
@@ -435,13 +432,26 @@ $ kubectl port-forward service/storageos 5705 --namespace=storageos
 
 # login to Ondat's UI using your preferred browser.
 http://localhost:5705/
+
+# enter the username and password created earlier when installing Ondat
 ```
+
+* You can inspect a persistent volume claim and review the volume details.
+
+<p align="center">
+  <img alt="Ondat UI Postgres Operator Namespace Volumes" width="" height="" src="./images/postgres-operator-namespace-ondat-ui-1.png">
+  <img alt="Ondat UI Volume Details Postgres Cluster 1" width="" height="" src="./images/volume-details-ondat-ui-1.png">
+  <img alt="Ondat UI Volume Details Postgres Cluster 1" width="" height="" src="./images/volume-details-ondat-ui-2.png">
+</p>
 
 ### Removal & Deletion
 
 * You will need to remove the workloads that are using Ondat's StorageClasses first before you remove Ondat from your EKS Cluster. 
 
 ```bash
+# navigate back to `sa-demo-ondat/`directory
+$ cd sa-demo-ondat/
+
 # delete the example workloads deployed in your cluster
 $ kubectl delete -f pvc/
 $ kubectl delete -f postgres/keycloak-apps-postgres.yml
@@ -457,7 +467,7 @@ resourcequota "storageos-critical-pods" deleted
 
 # destroy the environment created with `eksctl` once you 
 # are finished testing out EKS & Ondat.
-$ eksctl delete cluster --region=eu-central-1 --name=eks-demo-username-cluster
+$ eksctl delete cluster --region=eu-central-1 --name=chris-eks-demo-cluster
 ```
 
 * *NOTE* The volumes are not deleted for some reason.
